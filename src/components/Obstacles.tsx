@@ -1,0 +1,26 @@
+import { useMemo,useLayoutEffect,useRef } from 'react';
+import * as THREE from 'three';
+import {chunkData, type Obstacle} from '../world';
+const dummy=new THREE.Object3D();
+function Grove({items}:{items:Obstacle[]}){
+ const trunks=useRef<THREE.InstancedMesh>(null),leaves=useRef<THREE.InstancedMesh>(null),branches=useRef<THREE.InstancedMesh>(null);
+ useLayoutEffect(()=>{if(!trunks.current||!leaves.current||!branches.current)return;items.forEach((o,i)=>{const bamboo=o.kind==='bamboo';dummy.position.set(o.x,(bamboo?5:3)*o.scale,o.z);dummy.rotation.set(0,o.turn,bamboo?.04:0);dummy.scale.set((bamboo?.24:.48)*o.scale,(bamboo?10:6)*o.scale,(bamboo?.24:.48)*o.scale);dummy.updateMatrix();trunks.current!.setMatrixAt(i,dummy.matrix);trunks.current!.setColorAt(i,new THREE.Color(bamboo?'#73825a':'#705a51'));for(let j=0;j<5;j++){const angle=j*2.4+o.turn;dummy.position.set(o.x+Math.cos(angle)*(bamboo?.7:2)*o.scale,(bamboo?7+j*.8:6.1+Math.sin(j*3)*.9)*o.scale,o.z+Math.sin(angle)*1.7*o.scale);dummy.scale.set((bamboo?1.2:2.6)*o.scale,(bamboo?.8:1.7)*o.scale,(bamboo?1:2.5)*o.scale);dummy.rotation.set(j*.7,angle,0);dummy.updateMatrix();leaves.current!.setMatrixAt(i*5+j,dummy.matrix);leaves.current!.setColorAt(i*5+j,new THREE.Color(bamboo?['#879a6c','#a6b286','#617c63'][j%3]:['#efb5ba','#f4c4c6','#db95a7','#e9a7b4','#f5ccca'][j%5]));}for(let j=0;j<2;j++){dummy.position.set(o.x+(j?1:-1)*o.scale,4.5*o.scale,o.z);dummy.rotation.set(0,0,(j?-1:1)*.6);dummy.scale.set(.19*o.scale,3.6*o.scale,.19*o.scale);dummy.updateMatrix();branches.current!.setMatrixAt(i*2+j,dummy.matrix);}});trunks.current.instanceMatrix.needsUpdate=true;leaves.current.instanceMatrix.needsUpdate=true;branches.current.instanceMatrix.needsUpdate=true;},[items]);
+ if(!items.length)return null;return <><instancedMesh ref={trunks} args={[undefined,undefined,items.length]} castShadow receiveShadow><cylinderGeometry args={[.7,1,1,6]}/><meshStandardMaterial roughness={1}/></instancedMesh><instancedMesh ref={branches} args={[undefined,undefined,items.length*2]} castShadow><cylinderGeometry args={[.5,1,1,5]}/><meshStandardMaterial color="#705a51"/></instancedMesh><instancedMesh ref={leaves} args={[undefined,undefined,items.length*5]} castShadow receiveShadow><icosahedronGeometry args={[1,1]}/><meshStandardMaterial roughness={1} flatShading/></instancedMesh></>
+}
+export function House({x=0,z=0,scale=1,temple=false}:{x?:number;z?:number;scale?:number;temple?:boolean}){return <group position={[x,0,z]} scale={scale}>
+ <mesh position={[0,1.7,0]} castShadow receiveShadow><boxGeometry args={[5,3.4,4]}/><meshStandardMaterial color={temple?'#b05e49':'#dcc4a0'}/></mesh>
+ {[0,1,...(temple?[2]:[])].map((v)=><group key={v} position={[0,v*2.6,0]}><mesh position={[0,4,0]} rotation={[0,Math.PI/4,0]} scale={[1.5,.55,1.2]} castShadow><coneGeometry args={[4,3,4]}/><meshStandardMaterial color={temple?'#584f51':'#666d6b'} flatShading/></mesh><mesh position={[0,3.1,0]}><boxGeometry args={[6.9,.25,5.2]}/><meshStandardMaterial color="#555757"/></mesh>{v>0&&<mesh position={[0,2,0]}><boxGeometry args={[3.5,2.5,3]}/><meshStandardMaterial color="#b77a5d"/></mesh>}</group>)}
+ {[-1.8,0,1.8].map(p=><mesh key={p} position={[p,1.4,2.03]}><boxGeometry args={[.85,1.6,.08]}/><meshStandardMaterial color="#f3ddb1" emissive="#e4a55c" emissiveIntensity={.18}/></mesh>)}
+ {[-2.4,2.4].map(p=><mesh key={p} position={[p,1.7,2.12]}><boxGeometry args={[.18,3.5,.18]}/><meshStandardMaterial color="#785e4e"/></mesh>)}
+ <mesh position={[0,.3,2.7]} receiveShadow><boxGeometry args={[6,.6,1.4]}/><meshStandardMaterial color="#9b8061"/></mesh>
+ </group>}
+export function Torii({x=0,z=0}:{x?:number;z?:number}){return <group position={[x,0,z]}>
+ {[-7.3,7.3].map(p=><group key={p}><mesh position={[p,7.3,0]} castShadow><cylinderGeometry args={[.42,.65,14.6,8]}/><meshStandardMaterial color="#b85a43"/></mesh><mesh position={[p,.6,0]}><cylinderGeometry args={[.72,.8,1.2,8]}/><meshStandardMaterial color="#555d58"/></mesh></group>)}
+ <mesh position={[0,13.1,0]} castShadow><boxGeometry args={[17,.6,.7]}/><meshStandardMaterial color="#b4513e"/></mesh>
+ <mesh position={[0,15,0]} castShadow><boxGeometry args={[19,.8,1.05]}/><meshStandardMaterial color="#b95440"/></mesh>
+ <mesh position={[0,15.6,0]} castShadow><boxGeometry args={[20,.45,1.3]}/><meshStandardMaterial color="#514b48"/></mesh>
+ {[-1,1].map(s=><mesh key={s} position={[s*9.8,15.85,0]} rotation={[0,0,s*.2]}><boxGeometry args={[2.5,.45,1.3]}/><meshStandardMaterial color="#514b48"/></mesh>)}
+ <mesh position={[0,14.1,.65]}><boxGeometry args={[1.1,1.6,.18]}/><meshStandardMaterial color="#d0aa69"/></mesh>
+ <mesh position={[0,10,-.1]}><torusGeometry args={[3.3,.032,8,64]}/><meshBasicMaterial color="#ffe4a1" transparent opacity={.3}/></mesh>
+ </group>}
+export default function Obstacles({index}:{index:number}){const items=useMemo(()=>chunkData(index),[index]);return <><Grove items={items.filter(o=>o.kind==='tree'||o.kind==='bamboo')}/>{items.filter(o=>o.kind==='house').map((o,i)=><House key={i} x={o.x} z={o.z} scale={o.scale} temple={Math.floor(index/6.5)%5===3}/>)}{items.filter(o=>o.kind==='rock').map((o,i)=><mesh key={i} position={[o.x,2,o.z]} scale={[o.scale*5,o.scale*9,o.scale*5]} castShadow><icosahedronGeometry args={[1,0]}/><meshStandardMaterial color="#9a9c8b" flatShading/></mesh>)}</>}
